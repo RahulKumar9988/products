@@ -1,113 +1,137 @@
-import axios from 'axios';
-
 import React, { useEffect, useState } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
+import { fetchProducts, fetchCategories, fetchProductsByCategory } from '../redux/productSlcie';
+import Youtube from './Youtube';
+import { Button, Card, CardActions, CardContent, CardMedia, Grid, Typography } from '@mui/material';
 
-function  Api() {
-  const [products, setProducts] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [categories, setCategories] = useState([]);
+function Api() {
+  const dispatch = useDispatch();
+  const { products, categories, loading } = useSelector((state) => state.products);
+
   const [selectCategory, setSelectCategory] = useState('');
-
-  // Pagination state
+  const [searchQuery, setSearchQuery] = useState(''); // State for the search query
   const [currentPage, setCurrentPage] = useState(1);
-  const [productsPerPage] = useState(5); // Set how many products per page
+  const [productsPerPage] = useState(10); // Set how many products per page
 
   useEffect(() => {
-    // Fetch all products
-    axios.get("https://dummyjson.com/products/")
-      .then((response) => {
-        setProducts(response.data.products);
-        setLoading(false);
-      })
-      .catch(() => {
-        console.log("Error");
-      });
-
-    // Fetch all categories
-    axios.get("https://dummyjson.com/products/categories")
-      .then((response) => {
-        setCategories(response.data); 
-        setLoading(false);
-      })
-      .catch(() => {
-        console.log("Category Error");
-      });
-  }, []);
+    dispatch(fetchProducts());
+    dispatch(fetchCategories());
+  }, [dispatch]);
 
   const handleCategoryChange = (event) => {
-    const selectedCategory = event.target.value; 
+    const selectedCategory = event.target.value;
     setSelectCategory(selectedCategory);
-
-    if (selectedCategory === '') {
-      // Fetch all products if 'All Categories' is selected
-      axios.get("https://dummyjson.com/products/")
-        .then(response => {
-          setProducts(response.data.products);
-        })
-        .catch(error => {
-          console.error("Error fetching all products!", error);
-        });
-    } else {
-      // Fetch products by category
-      axios.get(`https://dummyjson.com/products/category/${selectedCategory}`)
-        .then(response => {
-          setProducts(response.data.products);
-        })
-        .catch(error => {
-          console.error("There was an error fetching the products for the category!", error);
-        });
-    }
-    // Reset to first page on category change
-    setCurrentPage(1);
+    dispatch(fetchProductsByCategory(selectedCategory));
+    setCurrentPage(1); // Reset to first page on category change
   };
 
-  // Get the current products for the current page
+  const handleSearchChange = (event) => {
+    setSearchQuery(event.target.value);
+    setCurrentPage(1); // Reset to first page on search query change
+  };
+
+  // Filter products based on the search query
+  const filteredProducts = products.filter(product =>
+    product.title.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  // Pagination logic
   const indexOfLastProduct = currentPage * productsPerPage;
   const indexOfFirstProduct = indexOfLastProduct - productsPerPage;
-  const currentProducts = products.slice(indexOfFirstProduct, indexOfLastProduct);
+  const currentProducts = filteredProducts.slice(indexOfFirstProduct, indexOfLastProduct);
 
   // Change page
   const paginate = (pageNumber) => setCurrentPage(pageNumber);
 
   return (
-    <div>
-      <div>
-        <label htmlFor="category">Filter by category</label>
-        <select id="category" value={selectCategory} onChange={handleCategoryChange}>
-          <option value="">All Categories</option>
-          {categories.map((category, index) => (
-            <option key={index} value={category.name || category}>
-              {category.name || category}
-            </option>
-          ))}
-        </select>
+    <div className="container mx-auto p-4">
+      <div className='flex justify-between '>
+        <div className="mb-4">
+          <select
+            id="category"
+            value={selectCategory}
+            onChange={handleCategoryChange}
+            className="border border-gray-300 rounded-md p-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            <option value="">All Categories</option>
+            {categories.map((category, index) => (
+              <option key={index} value={category.name || category}>
+                {category.name || category}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {/* Search Input */}
+        <div className="mb-4">
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={handleSearchChange}
+            placeholder="Search products..."
+            className="border border-gray-300 rounded-md p-2 focus:outline-none focus:ring-2 focus:ring-blue-500 w-full"
+          />
+        </div>
       </div>
 
       {loading ? (
-        <h1>Loading...</h1>
+        <div className="bg-primary">
+          <div className="flex justify-center ">
+            <div className='grid grid-cols-1 md:grid-cols-4'>
+              <Youtube />
+              <Youtube />
+              <Youtube />
+              <Youtube />
+              <Youtube />
+              <Youtube />
+              <Youtube />
+              <Youtube />
+              <Youtube />
+              <Youtube />
+              <Youtube />
+              <Youtube />
+              <Youtube />
+              <Youtube />
+              <Youtube />
+            </div>
+          </div>
+        </div>
       ) : (
         <div>
-          <ul>
+          <Grid container spacing={2}>
             {currentProducts.map(product => (
-              <li key={product.id}>
-                {product.title}
-                <img
-                  src={product.thumbnail}
-                  alt={product.title}
-                  loading='lazy'
-                  style={{ width: '150px', height: '150px', objectFit: 'cover' }}
-                />
-              </li>
+              <Grid item xs={12} sm={6} md={3} key={product.id}>
+                <Card sx={{ maxWidth: 300, height: '450px', display: 'flex', flexFlow: 'column', alignItems: 'center', justifyContent: 'space-around', borderRadius: "20px" }}>
+                  <CardMedia style={{ height: '220px', width: '200px' }}
+                    component="img"
+                    alt={product.title}
+                    image={product.thumbnail}
+                    loading='lazy'
+                  />
+                  <CardContent>
+                    <Typography gutterBottom component="div" style={{ fontSize: '20px' }}>
+                      {product.title}
+                    </Typography>
+                    <Typography variant="body5" sx={{ color: 'text.secondary' }}>
+                      {product.description.slice(0, product.description.length - 50) + "..."}
+                    </Typography>
+                  </CardContent>
+                  <CardActions style={{ display: 'flex', gap: '70px' }}>
+                    <Typography>INR {product.price}</Typography>
+                    <Button style={{ border: '2px solid', borderRadius: '15px' }} size="small">Add to cart</Button>
+                  </CardActions>
+                </Card>
+              </Grid>
             ))}
-          </ul>
+          </Grid>
 
           {/* Pagination Controls */}
-          <div>
-            {Array.from({ length: Math.ceil(products.length / productsPerPage) }, (_, index) => (
-              <button 
-                key={index + 1} 
-                onClick={() => paginate(index + 1)} 
-                style={{ margin: '0 5px', padding: '5px', backgroundColor: currentPage === index + 1 ? 'lightblue' : 'white' }}
+          <div className="flex justify-center mt-4">
+            {Array.from({ length: Math.ceil(filteredProducts.length / productsPerPage) }, (_, index) => (
+              <button
+                key={index + 1}
+                onClick={() => paginate(index + 1)}
+                className={`mx-1 px-3 py-1 rounded-md ${currentPage === index + 1 ? 'bg-blue-500 text-white' : 'bg-gray-200'}`}
               >
                 {index + 1}
               </button>

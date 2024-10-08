@@ -1,16 +1,15 @@
 import './App.css'
-import Products from './components/Products'
 import { BrowserRouter as Router, Routes,Route } from 'react-router-dom';
 import Navbar from './components/Navbar';
-import Cart from './components/Cart';
+import Api from './components/Api';
 function App() {
 
   return (
     <Router>
       <Navbar/>
       <Routes>
-        <Route path='/' element={<Products/>} />
-        {/* <Route path='/cart' element={<Cart/>} /> */}
+        <Route path='/' element={<Api/>} />
+       
       </Routes>
     </Router>
     
@@ -18,3 +17,4 @@ function App() {
 }
 
 export default App
+
